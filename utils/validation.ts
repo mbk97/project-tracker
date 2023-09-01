@@ -24,3 +24,14 @@ export const createProjectSchema = Joi.object({
   endDate: Joi.date().required(),
   status: Joi.string().required(),
 });
+
+export const createTaskSchema = Joi.object({
+  taskName: Joi.string().min(3).max(50).required(),
+  taskDescription: Joi.string().min(3).required(),
+  taskComment: Joi.string().required(),
+  taskStartDate: Joi.date().required(),
+  taskEndDate: Joi.date().required(),
+  taskStatus: Joi.string().required(),
+  projectId: Joi.string().required(),
+  projectName: Joi.string().min(3).max(50).required(),
+});
