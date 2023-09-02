@@ -4,7 +4,7 @@ export interface IProject {
   startDate: any;
   endDate: any;
   status: string;
-  _id?: string;
+  _id: any;
 }
 
 export interface ITask {
