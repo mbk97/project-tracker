@@ -1,19 +1,41 @@
 import { Request, Response } from "express";
 import { ITask } from "../types/types";
 import { createTaskSchema } from "../utils/validation";
-import taskModel from "../model/taskModel";
+import Tasks from "../model/taskModel";
 import projectModel from "../model/projectModel";
+
+const getAllTask = async (res: Response) => {
+  try {
+    const data = await Tasks.find();
+    res.status(200).json({
+      message: "successful",
+      data: data,
+      taskLength: data.length,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({
+        message: error.message,
+      });
+    } else {
+      res.status(500).json({
+        message: "An unexpected error occurred",
+      });
+    }
+  }
+};
 
 const getAllTaskByProjectId = async (req: Request, res: Response) => {
   try {
     const projectData = await projectModel.findById(req.params.id);
 
     if (!projectData) {
-      return res.status(404).json({ message: "Project not found" });
+      res.status(404).json({ message: "Project not found" });
+      return;
     }
 
     const projectId = projectData._id;
-    const tasks = await taskModel.find({ projectId });
+    const tasks = await Tasks.find({ projectId });
 
     res.status(200).json({
       message: "Successful",
@@ -34,15 +56,16 @@ const getAllTaskByProjectId = async (req: Request, res: Response) => {
 
 const getSingleTaskById = async (req: Request, res: Response) => {
   try {
-    const task = await taskModel.findById(req.params.id);
+    const task = await Tasks.findById(req.params.id);
 
     if (!task) {
       res.status(400).json({
         message: "Task not found",
       });
+      return;
     }
 
-    const taskData = await taskModel.find({
+    const taskData = await Tasks.find({
       _id: task?._id,
     });
 
@@ -63,7 +86,7 @@ const getSingleTaskById = async (req: Request, res: Response) => {
   }
 };
 
-const createTask = async (req: Request<ITask>, res: Response) => {
+const createTask = async (req: Request, res: Response) => {
   const {
     taskName,
     taskDescription,
@@ -79,10 +102,21 @@ const createTask = async (req: Request<ITask>, res: Response) => {
 
   if (error) {
     res.status(400).send(error?.details[0]?.message);
+    return;
+  }
+
+  const checkProjectId = await projectModel.findById(projectId);
+
+  if (!checkProjectId) {
+    res.status(400).json({
+      message: "Project does not exist",
+    });
+
+    return;
   }
 
   try {
-    const newTask = await taskModel.create({
+    const newTask = await Tasks.create({
       taskName,
       taskDescription,
       taskStartDate,
@@ -114,7 +148,7 @@ const createTask = async (req: Request<ITask>, res: Response) => {
 
 const updateTask = async (req: Request, res: Response) => {
   try {
-    const taskId = await taskModel.findById(req.params.id);
+    const taskId = await Tasks.findById(req.params.id);
 
     if (!taskId) {
       res.status(400).json({
@@ -122,13 +156,9 @@ const updateTask = async (req: Request, res: Response) => {
       });
     }
 
-    const updatedTaskData = await taskModel.findByIdAndUpdate(
-      taskId,
-      req.body,
-      {
-        new: true,
-      },
-    );
+    const updatedTaskData = await Tasks.findByIdAndUpdate(taskId, req.body, {
+      new: true,
+    });
 
     res.status(200).json({
       message: "Task updated",
@@ -149,7 +179,7 @@ const updateTask = async (req: Request, res: Response) => {
 
 const deleteTask = async (req: Request, res: Response) => {
   try {
-    const taskId = await taskModel.findById(req.params.id);
+    const taskId = await Tasks.findById(req.params.id);
 
     if (!taskId) {
       res.status(400).json({
@@ -157,7 +187,7 @@ const deleteTask = async (req: Request, res: Response) => {
       });
     }
 
-    const response = await taskModel.findByIdAndDelete(taskId);
+    const response = await Tasks.findByIdAndDelete(taskId);
     if (response) {
       res.status(200).json({
         message: "Task deleted",
@@ -176,10 +206,42 @@ const deleteTask = async (req: Request, res: Response) => {
   }
 };
 
+const searchTaskByName = async (req: Request, res: Response) => {
+  try {
+    const { taskName } = req.body;
+    if (!taskName) {
+      res.status(400).json({
+        message: "Task not found",
+      });
+      return;
+    }
+    const taskData = await Tasks.find();
+    const response = taskData.filter((task: ITask) => {
+      return task?.taskName.toLowerCase().includes(taskName.toLowerCase());
+    });
+    res.status(200).json({
+      message: "successful",
+      data: response,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({
+        message: error.message,
+      });
+    } else {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+};
+
 export {
+  getAllTask,
   createTask,
   getAllTaskByProjectId,
   getSingleTaskById,
   updateTask,
   deleteTask,
+  searchTaskByName,
 };

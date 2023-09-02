@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { createProjectSchema } from "../utils/validation";
 import project from "../model/projectModel";
+import { IProject, ITask } from "../types/types";
+import taskModel from "../model/taskModel";
 
 const getProjects = async (req: Request, res: Response) => {
   try {
@@ -132,4 +134,84 @@ const deleteProject = async (req: Request, res: Response) => {
   }
 };
 
-export { createProject, editProject, getProjects, deleteProject };
+const searchProject = async (req: Request, res: Response) => {
+  try {
+    const { projectName } = req.body;
+
+    if (!projectName) {
+      res.status(400).json({
+        message: "project name not attached",
+      });
+      return;
+    }
+
+    const allProject = await project.find();
+    const response = allProject.filter((project: IProject) => {
+      return project?.projectName
+        .toLowerCase()
+        .includes(projectName.toLowerCase());
+    });
+
+    if (response.length === 0) {
+      res.status(400).json({
+        message: "Project not found",
+      });
+    } else {
+      res.status(200).json({
+        message: "successful",
+        data: response,
+      });
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({
+        message: error.message,
+      });
+    } else {
+      res.status(500).json({
+        message: "An unexpected error occurred",
+      });
+    }
+  }
+};
+
+const allProjectProgress = async (req: Request, res: Response) => {
+  try {
+    const projectData = await project.findById(req.params.id);
+    const projectId = projectData?._id.toString();
+
+    if (!projectId) {
+      res.status(400).json({
+        message: "project does not exist",
+      });
+      return;
+    }
+    const tasks = await taskModel.find({ projectId });
+    const totalTasks = tasks.length;
+
+    const completedTasks = tasks.filter((task: ITask) => {
+      return task.taskStatus === "completed";
+    });
+
+    const percentageCompleted = (completedTasks.length / totalTasks) * 100;
+
+    if (tasks) {
+      res.status(200).json({
+        message: "All task",
+        completed: `${percentageCompleted}%`,
+        task: tasks,
+      });
+    } else {
+      res.status(400).json("no tasks found");
+    }
+  } catch (error) {}
+};
+
+export {
+  createProject,
+  editProject,
+  getProjects,
+  deleteProject,
+  searchProject,
+  allProjectProgress,
+};
