@@ -1,4 +1,7 @@
+import { Request } from "express";
+
 export interface IProject {
+  user: any;
   projectName: string;
   projectDescription: string;
   startDate: any;
@@ -7,7 +10,15 @@ export interface IProject {
   _id: any;
 }
 
+export interface IUser {
+  name: string;
+  password: string;
+  email: string;
+  phoneNumber: string;
+}
+
 export interface ITask {
+  user: any;
   taskName: string;
   taskDescription: string;
   taskComment: string;
@@ -16,4 +27,9 @@ export interface ITask {
   taskStatus: string;
   projectId: string;
   projectName: string;
+}
+
+export interface IGetUserAuthInfoRequest extends Request {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  user: any;
 }

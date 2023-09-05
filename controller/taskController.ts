@@ -3,10 +3,11 @@ import { ITask } from "../types/types";
 import { createTaskSchema } from "../utils/validation";
 import Tasks from "../model/taskModel";
 import projectModel from "../model/projectModel";
+import userModel from "../model/userModel";
 
-const getAllTask = async (res: Response) => {
+const getAllTask = async (req: any, res: Response) => {
   try {
-    const data = await Tasks.find();
+    const data = await Tasks.find({ user: req.user.id });
     res.status(200).json({
       message: "successful",
       data: data,
@@ -25,7 +26,7 @@ const getAllTask = async (res: Response) => {
   }
 };
 
-const getAllTaskByProjectId = async (req: Request, res: Response) => {
+const getAllTaskByProjectId = async (req: any, res: Response) => {
   try {
     const projectData = await projectModel.findById(req.params.id);
 
@@ -86,7 +87,7 @@ const getSingleTaskById = async (req: Request, res: Response) => {
   }
 };
 
-const createTask = async (req: Request, res: Response) => {
+const createTask = async (req: any, res: Response) => {
   const {
     taskName,
     taskDescription,
@@ -125,6 +126,7 @@ const createTask = async (req: Request, res: Response) => {
       taskStatus,
       projectId,
       projectName,
+      user: req?.user.id,
     });
 
     if (newTask) {
@@ -146,19 +148,33 @@ const createTask = async (req: Request, res: Response) => {
   }
 };
 
-const updateTask = async (req: Request, res: Response) => {
+const updateTask = async (req: any, res: Response) => {
   try {
-    const taskId = await Tasks.findById(req.params.id);
+    const task = await Tasks.findById(req.params.id);
 
-    if (!taskId) {
+    if (!task) {
       res.status(400).json({
         message: "Task not found",
       });
     }
 
-    const updatedTaskData = await Tasks.findByIdAndUpdate(taskId, req.body, {
-      new: true,
-    });
+    const updatedTaskData = await Tasks.findByIdAndUpdate(
+      task?._id.toString(),
+      req.body,
+      {
+        new: true,
+      },
+    );
+
+    const user = await userModel.findById(req.user.id);
+
+    // make sure the loggedin user matches the note user
+    if (task?.user.toString() !== user?.id) {
+      res.status(400).json({
+        message: "User not found",
+      });
+      return;
+    }
 
     res.status(200).json({
       message: "Task updated",
@@ -177,17 +193,27 @@ const updateTask = async (req: Request, res: Response) => {
   }
 };
 
-const deleteTask = async (req: Request, res: Response) => {
+const deleteTask = async (req: any, res: Response) => {
   try {
-    const taskId = await Tasks.findById(req.params.id);
+    const task = await Tasks.findById(req.params.id);
 
-    if (!taskId) {
+    if (!task) {
       res.status(400).json({
         message: "Task not found",
       });
     }
 
-    const response = await Tasks.findByIdAndDelete(taskId);
+    const user = await userModel.findById(req.user.id);
+
+    // make sure the loggedin user matches the note user
+    if (task?.user.toString() !== user?.id) {
+      res.status(400).json({
+        message: "User not found",
+      });
+      return;
+    }
+
+    const response = await Tasks.findByIdAndDelete(task?._id.toString());
     if (response) {
       res.status(200).json({
         message: "Task deleted",

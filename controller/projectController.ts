@@ -3,10 +3,11 @@ import { createProjectSchema } from "../utils/validation";
 import project from "../model/projectModel";
 import { IProject, ITask } from "../types/types";
 import taskModel from "../model/taskModel";
+import userModel from "../model/userModel";
 
-const getProjects = async (req: Request, res: Response) => {
+const getProjects = async (req: any, res: Response) => {
   try {
-    const projectsData = await project.find();
+    const projectsData = await project.find({ user: req.user.id });
 
     const totalProjects = projectsData.length;
 
@@ -30,7 +31,7 @@ const getProjects = async (req: Request, res: Response) => {
   }
 };
 
-const createProject = async (req: Request, res: Response) => {
+const createProject = async (req: any, res: Response) => {
   const { projectName, projectDescription, startDate, endDate, status } =
     req.body;
 
@@ -42,11 +43,12 @@ const createProject = async (req: Request, res: Response) => {
 
   try {
     const newProject = await project.create({
-      projectName,
-      projectDescription,
-      startDate,
-      endDate,
-      status,
+      projectName: projectName,
+      projectDescription: projectDescription,
+      startDate: startDate,
+      endDate: endDate,
+      status: status,
+      user: req?.user.id,
     });
 
     if (newProject) {
@@ -68,14 +70,25 @@ const createProject = async (req: Request, res: Response) => {
   }
 };
 
-const editProject = async (req: Request, res: Response) => {
+const editProject = async (req: any, res: Response) => {
   try {
-    const projectId = await project.findById(req.params.id);
+    const projectData = await project.findById(req.params.id);
 
-    if (!projectId) {
+    if (!projectData) {
       res.status(400).json({
         message: "Project not found",
       });
+    }
+
+    // find the user
+    const user = await userModel.findById(req.user.id);
+
+    // make sure the loggedin user matches the note user
+    if (projectData?.user.toString() !== user?.id) {
+      res.status(400).json({
+        message: "User not found",
+      });
+      return;
     }
 
     const updatedProject = await project.findByIdAndUpdate(
@@ -92,7 +105,7 @@ const editProject = async (req: Request, res: Response) => {
     }
   } catch (error: any) {
     if (error instanceof Error) {
-      res.status(400).json({
+      return res.status(400).json({
         message: error.message,
       });
     } else {
@@ -103,19 +116,25 @@ const editProject = async (req: Request, res: Response) => {
   }
 };
 
-const deleteProject = async (req: Request, res: Response) => {
+const deleteProject = async (req: any, res: Response) => {
   try {
-    const projectId = await project.findById(req.params.id);
+    const projectData = await project.findById(req.params.id);
 
-    if (!projectId) {
+    if (!projectData) {
       res.status(400).json({
         message: "Project not found",
       });
-
       return;
     }
+    // find the user
+    const user = await userModel.findById(req.user.id);
 
-    const data = await project.findByIdAndDelete(projectId);
+    // make sure the loggedin user matches the note user
+    if (!user || projectData.user.toString() !== user.id) {
+      return res.status(400).json({ message: "User not authorized" });
+    }
+
+    const data = await project.findByIdAndDelete(req.params.id);
     if (data) {
       res.status(200).json({
         message: "Project deleted",
@@ -134,7 +153,7 @@ const deleteProject = async (req: Request, res: Response) => {
   }
 };
 
-const searchProject = async (req: Request, res: Response) => {
+const searchProject = async (req: any, res: Response) => {
   try {
     const { projectName } = req.body;
 
@@ -145,7 +164,7 @@ const searchProject = async (req: Request, res: Response) => {
       return;
     }
 
-    const allProject = await project.find();
+    const allProject = await project.find({ user: req.user.id });
     const response = allProject.filter((project: IProject) => {
       return project?.projectName
         .toLowerCase()

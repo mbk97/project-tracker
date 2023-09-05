@@ -3,6 +3,11 @@ import { IProject } from "../types/types";
 
 const projectSchema = new Schema<IProject>(
   {
+    user: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
     projectName: {
       type: String,
       required: [true, "Project name is required"],
