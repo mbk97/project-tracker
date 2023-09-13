@@ -29,7 +29,7 @@ const registerUser = async (req: Request<IUser>, res: Response) => {
 
     const newUser = await userModel.create({
       name: name,
-      email: email,
+      email: email.toLowerCase(),
       password: hashPassword,
       phoneNumber: phoneNumber,
     });
@@ -85,7 +85,7 @@ const login = async (req: Request<IUser>, res: Response) => {
         message: "Login successful",
         user: {
           name: user?.name,
-          email: user?.email,
+          email: user?.email.toLowerCase(),
           token: generateToken(user?._id.toString()!),
         },
       });
