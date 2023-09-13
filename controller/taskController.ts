@@ -4,6 +4,7 @@ import { createTaskSchema } from "../utils/validation";
 import Tasks from "../model/taskModel";
 import projectModel from "../model/projectModel";
 import userModel from "../model/userModel";
+import { checkUserAuthorization } from "../utils/authorization";
 
 const getAllTask = async (req: any, res: Response) => {
   try {
@@ -35,6 +36,17 @@ const getAllTaskByProjectId = async (req: any, res: Response) => {
       return;
     }
 
+    // find the user
+    const user = await userModel.findById(req.user.id);
+
+    // make sure the loggedin user matches the task owner
+    if (projectData?.user.toString() !== user?._id.toString()) {
+      res.status(400).json({
+        message: "User not found",
+      });
+      return;
+    }
+
     const projectId = projectData._id;
     const tasks = await Tasks.find({ projectId });
 
@@ -55,13 +67,26 @@ const getAllTaskByProjectId = async (req: any, res: Response) => {
   }
 };
 
-const getSingleTaskById = async (req: Request, res: Response) => {
+const getSingleTaskById = async (req: any, res: Response) => {
   try {
     const task = await Tasks.findById(req.params.id);
 
     if (!task) {
       res.status(400).json({
         message: "Task not found",
+      });
+      return;
+    }
+
+    // find the user
+    const user = await userModel.findById(req.user.id);
+
+    console.log(task, "Hello");
+
+    // make sure the loggedin user matches the note user
+    if (task?.user.toString() !== user?._id.toString()) {
+      res.status(400).json({
+        message: "User not found",
       });
       return;
     }
@@ -106,13 +131,31 @@ const createTask = async (req: any, res: Response) => {
     return;
   }
 
-  const checkProjectId = await projectModel.findById(projectId);
+  // find the user
+  const user = await userModel.findById(req.user.id);
+  if (!user) {
+    res.status(400).json({
+      message: "User does not exist",
+    });
 
-  if (!checkProjectId) {
+    return;
+  }
+
+  const project = await projectModel.findById(projectId);
+
+  if (!project) {
     res.status(400).json({
       message: "Project does not exist",
     });
 
+    return;
+  }
+
+  // check if the user is the owner of the project
+  if (project.user.toString() !== user._id.toString()) {
+    res.status(403).json({
+      message: "You are not authorized to create a task for this project",
+    });
     return;
   }
 
@@ -206,7 +249,7 @@ const deleteTask = async (req: any, res: Response) => {
     const user = await userModel.findById(req.user.id);
 
     // make sure the loggedin user matches the note user
-    if (task?.user.toString() !== user?.id) {
+    if (task?.user.toString() !== user?._id.toString()) {
       res.status(400).json({
         message: "User not found",
       });
@@ -232,19 +275,30 @@ const deleteTask = async (req: any, res: Response) => {
   }
 };
 
-const searchTaskByName = async (req: Request, res: Response) => {
+const searchTaskByName = async (req: any, res: Response) => {
   try {
-    const { taskName } = req.body;
+    const { taskName, projectId } = req.body;
     if (!taskName) {
       res.status(400).json({
-        message: "Task not found",
+        message: "Task name is required",
       });
       return;
     }
-    const taskData = await Tasks.find();
+
+    const user = await userModel.findById(req.user.id);
+    const project = await projectModel.findById(projectId);
+
+    if (project?.user.toString() !== user?._id.toString()) {
+      res.status(400).json({
+        message: "User not found",
+      });
+      return;
+    }
+    const taskData = await Tasks.find({ projectId: projectId });
     const response = taskData.filter((task: ITask) => {
       return task?.taskName.toLowerCase().includes(taskName.toLowerCase());
     });
+
     res.status(200).json({
       message: "successful",
       data: response,
