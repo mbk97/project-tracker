@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { IProject, ITask } from "../types/types";
 import userModel from "../model/userModel";
-import projectModel from "../model/projectModel";
+import Project from "../model/projectModel";
 import taskModel from "../model/taskModel";
 // import { createProjectSchema } from "../utils/validation";
 
 const getProjects = async (req: any, res: Response) => {
   try {
-    const projectsData = await projectModel.find({ user: req.user.id });
+    const projectsData = await Project.find({ user: req.user.id });
     const totalProjects = projectsData.length;
     if (projectsData) {
       res.status(200).json({
@@ -40,7 +40,7 @@ const createProject = async (req: any, res: Response) => {
   // }
 
   try {
-    const newProject = await projectModel.create({
+    const newProject = await Project.create({
       projectName: projectName,
       projectDescription: projectDescription,
       startDate: startDate,
@@ -70,7 +70,7 @@ const createProject = async (req: any, res: Response) => {
 
 const editProject = async (req: any, res: Response) => {
   try {
-    const projectData = await projectModel.findById(req.params.id);
+    const projectData = await Project.findById(req.params.id);
 
     if (!projectData) {
       res.status(400).json({
@@ -89,7 +89,7 @@ const editProject = async (req: any, res: Response) => {
       return;
     }
 
-    const updatedProject = await projectModel.findByIdAndUpdate(
+    const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true },
@@ -116,7 +116,7 @@ const editProject = async (req: any, res: Response) => {
 
 const deleteProject = async (req: any, res: Response) => {
   try {
-    const projectData = await projectModel.findById(req.params.id);
+    const projectData = await Project.findById(req.params.id);
 
     if (!projectData) {
       res.status(400).json({
@@ -132,7 +132,7 @@ const deleteProject = async (req: any, res: Response) => {
       return res.status(400).json({ message: "User not authorized" });
     }
 
-    const data = await projectModel.findByIdAndDelete(req.params.id);
+    const data = await Project.findByIdAndDelete(req.params.id);
     if (data) {
       res.status(200).json({
         message: "Project deleted",
@@ -162,7 +162,7 @@ const searchProject = async (req: any, res: Response) => {
       return;
     }
 
-    const allProject = await projectModel.find({ user: req.user.id });
+    const allProject = await Project.find({ user: req.user.id });
     const response = allProject.filter((project: IProject) => {
       return project?.projectName
         .toLowerCase()
@@ -194,7 +194,7 @@ const searchProject = async (req: any, res: Response) => {
 
 const allProjectProgress = async (req: Request, res: Response) => {
   try {
-    const projectData = await projectModel.findById(req.params.id);
+    const projectData = await Project.findById(req.params.id);
     const projectId = projectData?._id.toString();
 
     if (!projectId) {
