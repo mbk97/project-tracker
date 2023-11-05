@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { ITask } from "../types/types";
+import { Model } from "mongoose";
 
 const taskSchema = new Schema<ITask>(
   {
@@ -46,4 +47,6 @@ const taskSchema = new Schema<ITask>(
   },
 );
 
-export default model<ITask>("tasks", taskSchema);
+const Task: Model<ITask> = model<ITask>("Project", taskSchema);
+
+export default Task;

@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { ITask } from "../types/types";
 import { createTaskSchema } from "../utils/validation";
-import taskModel from "../model/taskModel";
-import projectModel from "../model/projectModel";
+import Task from "../model/taskModel";
+import Project from "../model/projectModel";
 import userModel from "../model/userModel";
 import { checkUserAuthorization } from "../utils/authorization";
 
 const getAllTask = async (req: any, res: Response) => {
   try {
-    const data = await taskModel.find({ user: req.user.id });
+    const data = await Task.find({ user: req.user.id });
     res.status(200).json({
       message: "successful",
       data: data,
@@ -29,7 +29,7 @@ const getAllTask = async (req: any, res: Response) => {
 
 const getAllTaskByProjectId = async (req: any, res: Response) => {
   try {
-    const projectData = await projectModel.findById(req.params.id);
+    const projectData = await Project.findById(req.params.id);
 
     if (!projectData) {
       res.status(404).json({ message: "Project not found" });
@@ -48,7 +48,7 @@ const getAllTaskByProjectId = async (req: any, res: Response) => {
     }
 
     const projectId = projectData._id;
-    const task = await taskModel.find({ projectId });
+    const task = await Task.find({ projectId });
 
     res.status(200).json({
       message: "Successful",
@@ -69,7 +69,7 @@ const getAllTaskByProjectId = async (req: any, res: Response) => {
 
 const getSingleTaskById = async (req: any, res: Response) => {
   try {
-    const task = await taskModel.findById(req.params.id);
+    const task = await Task.findById(req.params.id);
 
     if (!task) {
       res.status(400).json({
@@ -91,7 +91,7 @@ const getSingleTaskById = async (req: any, res: Response) => {
       return;
     }
 
-    const taskData = await taskModel.find({
+    const taskData = await Task.find({
       _id: task?._id,
     });
 
@@ -116,10 +116,10 @@ const createTask = async (req: any, res: Response) => {
   const {
     taskName,
     taskDescription,
-    taskModeltartDate,
+    TasktartDate,
     taskEndDate,
     taskComment,
-    taskModeltatus,
+    Tasktatus,
     projectId,
     projectName,
   } = req.body;
@@ -141,7 +141,7 @@ const createTask = async (req: any, res: Response) => {
     return;
   }
 
-  const project = await projectModel.findById(projectId);
+  const project = await Project.findById(projectId);
 
   if (!project) {
     res.status(400).json({
@@ -160,13 +160,13 @@ const createTask = async (req: any, res: Response) => {
   }
 
   try {
-    const newTask = await taskModel.create({
+    const newTask = await Task.create({
       taskName,
       taskDescription,
-      taskModeltartDate,
+      TasktartDate,
       taskEndDate,
       taskComment,
-      taskModeltatus,
+      Tasktatus,
       projectId,
       projectName,
       user: req?.user.id,
@@ -193,7 +193,7 @@ const createTask = async (req: any, res: Response) => {
 
 const updateTask = async (req: any, res: Response) => {
   try {
-    const task = await taskModel.findById(req.params.id);
+    const task = await Task.findById(req.params.id);
 
     if (!task) {
       res.status(400).json({
@@ -201,7 +201,7 @@ const updateTask = async (req: any, res: Response) => {
       });
     }
 
-    const updatedTaskData = await taskModel.findByIdAndUpdate(
+    const updatedTaskData = await Task.findByIdAndUpdate(
       task?._id.toString(),
       req.body,
       {
@@ -238,7 +238,7 @@ const updateTask = async (req: any, res: Response) => {
 
 const deleteTask = async (req: any, res: Response) => {
   try {
-    const task = await taskModel.findById(req.params.id);
+    const task = await Task.findById(req.params.id);
 
     if (!task) {
       res.status(400).json({
@@ -256,7 +256,7 @@ const deleteTask = async (req: any, res: Response) => {
       return;
     }
 
-    const response = await taskModel.findByIdAndDelete(task?._id.toString());
+    const response = await Task.findByIdAndDelete(task?._id.toString());
     if (response) {
       res.status(200).json({
         message: "Task deleted",
@@ -286,7 +286,7 @@ const searchTaskByName = async (req: any, res: Response) => {
     }
 
     const user = await userModel.findById(req.user.id);
-    const project = await projectModel.findById(projectId);
+    const project = await Project.findById(projectId);
 
     if (project?.user.toString() !== user?._id.toString()) {
       res.status(400).json({
@@ -294,7 +294,7 @@ const searchTaskByName = async (req: any, res: Response) => {
       });
       return;
     }
-    const taskData = await taskModel.find({ projectId: projectId });
+    const taskData = await Task.find({ projectId: projectId });
     const response = taskData.filter((task: ITask) => {
       return task?.taskName.toLowerCase().includes(taskName.toLowerCase());
     });
