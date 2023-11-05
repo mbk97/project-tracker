@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { IProject, ITask } from "../types/types";
-import Tasks from "../model/taskModel";
 import userModel from "../model/userModel";
 import { createProjectSchema } from "../utils/validation";
 import projectModel from "../model/projectModel";
+import taskModel from "../model/taskModel";
 
 const getProjects = async (req: any, res: Response) => {
   try {
@@ -205,7 +205,7 @@ const allProjectProgress = async (req: Request, res: Response) => {
       });
       return;
     }
-    const tasks = await Tasks.find({ projectId });
+    const tasks = await taskModel.find({ projectId });
     const totalTasks = tasks.length;
 
     const completedTasks = tasks.filter((task: ITask) => {
