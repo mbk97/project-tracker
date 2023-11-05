@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { IProject, ITask } from "../types/types";
 import userModel from "../model/userModel";
-import Project from "../model/projectModel";
 import taskModel from "../model/taskModel";
+import Project from "../model/projectModel";
 // import { createProjectSchema } from "../utils/validation";
 
 const getProjects = async (req: any, res: Response) => {

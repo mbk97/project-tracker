@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Model, Schema, model } from "mongoose";
 import { IProject } from "../types/types";
 
 const projectSchema = new Schema<IProject>(
@@ -37,4 +37,6 @@ const projectSchema = new Schema<IProject>(
   },
 );
 
-export default model<IProject>("project", projectSchema);
+const Project: Model<IProject> = model<IProject>("Project", projectSchema);
+
+export default Project;
