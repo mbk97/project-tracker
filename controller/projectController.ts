@@ -1,16 +1,14 @@
 import { Request, Response } from "express";
 import { IProject, ITask } from "../types/types";
 import userModel from "../model/userModel";
-import { createProjectSchema } from "../utils/validation";
 import projectModel from "../model/projectModel";
 import taskModel from "../model/taskModel";
+// import { createProjectSchema } from "../utils/validation";
 
 const getProjects = async (req: any, res: Response) => {
   try {
     const projectsData = await projectModel.find({ user: req.user.id });
-
     const totalProjects = projectsData.length;
-
     if (projectsData) {
       res.status(200).json({
         message: "successful",
@@ -35,11 +33,11 @@ const createProject = async (req: any, res: Response) => {
   const { projectName, projectDescription, startDate, endDate, status } =
     req.body;
 
-  const { error } = createProjectSchema.validate(req.body);
+  // const { error } = createProjectSchema.validate(req.body);
 
-  if (error) {
-    res.status(400).send(error?.details[0]?.message);
-  }
+  // if (error) {
+  //   res.status(400).send(error?.details[0]?.message);
+  // }
 
   try {
     const newProject = await projectModel.create({
